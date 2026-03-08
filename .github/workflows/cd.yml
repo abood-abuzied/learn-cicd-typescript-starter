@@ -39,7 +39,7 @@ jobs:
         with:
           project_id: notely-489208
 
-      # 6. Authenticate to Google Cloud using Workload Identity
+     
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
