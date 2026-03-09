@@ -4,39 +4,42 @@ on:
   push:
     branches: [ main ]
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      # Checkout repository
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      # Setup Node.js
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - run: npm ci
-      - run: npm run build
+      # Install dependencies
+      - name: Install dependencies
+        run: npm ci
 
-      - uses: google-github-actions/setup-gcloud@v1
+      # Build app
+      - name: Build app
+        run: npm run build
+
+      # Authenticate with Google Cloud using JSON key
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: notely-489208
+          service_account_key: ${{ secrets.GCP_CREDENTIALS }}
 
-      - uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: projects/165223638257/locations/global/workloadIdentityPools/github-pool/providers/github
-          service_account: cloud-run-deployer@notely-489208.iam.gserviceaccount.com
-          export_environment_variables: true  # ✅ sets federated creds for gcloud
+      # Configure Docker
+      - name: Configure Docker
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
 
-      - run: gcloud auth list  # debug: shows active account
-      - run: gcloud auth print-identity-token  # debug: shows token
-
-      - run: gcloud auth configure-docker us-central1-docker.pkg.dev
-
-      - run: |
+      # Build and push Docker image
+      - name: Build and push Docker image
+        run: |
           gcloud builds submit \
             --tag us-central1-docker.pkg.dev/notely-489208/notely-ar-repo/notely-app:latest .
