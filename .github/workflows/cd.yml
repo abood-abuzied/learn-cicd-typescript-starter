@@ -9,31 +9,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
+      # 1. Checkout repo
       - uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js
+      # 2. Setup Node.js
       - uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # 3️⃣ Install dependencies
+      # 3. Install dependencies
       - run: npm ci
 
-      # 4️⃣ Build the app
+      # 4. Build the app
       - run: npm run build
 
-      # 5️⃣ Authenticate gcloud using JSON key
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v1
+      # 5. Authenticate with GCP using JSON key
+      - name: Authenticate gcloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      # 6. Setup gcloud CLI (optional, installs latest gcloud)
+      - uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: notely-489208
-          service_account_key: ${{ secrets.GCP_CREDENTIALS }}
 
-      # 6️⃣ Configure Docker to push images
+      # 7. Configure Docker
       - run: gcloud auth configure-docker us-central1-docker.pkg.dev
 
-      # 7️⃣ Build and push Docker image
+      # 8. Build and push Docker image
       - run: |
           gcloud builds submit \
             --tag us-central1-docker.pkg.dev/notely-489208/notely-ar-repo/notely-app:latest .
