@@ -9,9 +9,13 @@ permissions:
   contents: read
 
 jobs:
-  Deploy:                # Job ID
-    name: Deploy         # Display name
+  Deploy:
+    name: Deploy
     runs-on: ubuntu-latest
+
+    # ✅ Add this
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     steps:
       # 1️⃣ Checkout the repo
@@ -32,7 +36,7 @@ jobs:
       - name: Build app
         run: npm run build
 
-      # 5️⃣ Authenticate gcloud with your GCP service account JSON
+      # 5️⃣ Authenticate gcloud
       - name: Authenticate gcloud
         uses: google-github-actions/auth@v2
         with:
@@ -44,7 +48,7 @@ jobs:
         with:
           project_id: notely-489208
 
-      # 7️⃣ Configure Docker to push to Artifact Registry
+      # 7️⃣ Configure Docker
       - name: Configure Docker
         run: gcloud auth configure-docker us-central1-docker.pkg.dev
 
@@ -53,11 +57,17 @@ jobs:
         run: |
           gcloud builds submit \
             --tag us-central1-docker.pkg.dev/notely-489208/notely-ar-repo/notely-app:latest .
+
+      # ✅ NEW STEP (run migrations)
+      - name: Run DB migrations
+        run: npm run db:migrate
+
+      # 9️⃣ Deploy to Cloud Run
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy notely \
-           --image us-central1-docker.pkg.dev/notely-489208/notely-ar-repo/notely-app:latest \
-           --region us-central1 \
-           --allow-unauthenticated \
-           --project notely-489208 \
-           --max-instances=4
+            --image us-central1-docker.pkg.dev/notely-489208/notely-ar-repo/notely-app:latest \
+            --region us-central1 \
+            --allow-unauthenticated \
+            --project notely-489208 \
+            --max-instances=4
